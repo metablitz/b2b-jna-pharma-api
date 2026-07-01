@@ -1,0 +1,274 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AdminUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum MemberTier {
+  bronze
+  silver
+  gold
+}
+
+enum PharmacyStatus {
+  pending
+  active
+  suspended
+}
+
+enum PromotionType {
+  buy_get_free
+  discount
+  flash_sale
+  bundle
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  shipping
+  delivered
+  cancelled
+}
+
+enum NotificationType {
+  order_placed
+  order_confirmed
+  order_shipping
+  order_delivered
+  order_cancelled
+  system
+}
+
+enum ChatRoomType {
+  general
+  merchandise
+  accounting
+  technical
+  product
+}
+
+enum ChatSenderType {
+  pharmacy
+  admin
+}
+
+model Pharmacy {
+  id              String         @id @default(uuid())
+  code            String         @unique
+  name            String
+  businessLicense String
+  phone           String         @unique
+  passwordHash    String
+  email           String?
+  street          String
+  ward            String
+  district        String
+  province        String
+  memberTier      MemberTier     @default(bronze)
+  status          PharmacyStatus @default(pending)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  orders        Order[]
+  cartItems     CartItem[]
+  notifications Notification[]
+  chatRooms     ChatRoom[]
+  addresses     Address[]
+  favorites     Favorite[]
+}
+
+model Address {
+  id         String   @id @default(uuid())
+  pharmacyId String
+  pharmacy   Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  label      String   @default("Nhà thuốc")
+  street     String
+  ward       String
+  district   String
+  province   String
+  phone      String?
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Product {
+  id                 String   @id @default(uuid())
+  name               String
+  sku                String   @unique
+  barcode            String?
+  category           String
+  manufacturer       String
+  unit               String
+  packagingInfo      String
+  expiryDate         DateTime?
+  images             String[]
+  basePrice          Int
+  currentPrice       Int
+  previousPrice      Int?
+  priceChangePercent Int?
+  isVAT              Boolean  @default(true)
+  stockQuantity      Int      @default(0)
+  isLimitedStock     Boolean  @default(false)
+  isFeatured         Boolean  @default(false)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  tierPricing       TierPrice[]
+  orderItems        OrderItem[]
+  cartItems         CartItem[]
+  promotionProducts PromotionProduct[]
+  favorites         Favorite[]
+}
+
+model Favorite {
+  id         String   @id @default(uuid())
+  pharmacyId String
+  pharmacy   Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([pharmacyId, productId])
+}
+
+model TierPrice {
+  id          String  @id @default(uuid())
+  productId   String
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  minQuantity Int
+  price       Int
+  discount    Int?
+}
+
+model Promotion {
+  id               String    @id @default(uuid())
+  type             PromotionType
+  manufacturerName String
+  title            String
+  minOrderQuantity Int       @default(1)
+  maxOrderQuantity Int?
+  totalSaving      Int       @default(0)
+  startDate        DateTime
+  endDate          DateTime
+  isActive         Boolean   @default(true)
+
+  buyProducts  PromotionProduct[] @relation("PromotionBuy")
+  giveProducts PromotionProduct[] @relation("PromotionGive")
+}
+
+model PromotionProduct {
+  id        String  @id @default(uuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Int
+  isFree    Boolean @default(false)
+
+  buyPromotionId  String?
+  buyPromotion    Promotion? @relation("PromotionBuy", fields: [buyPromotionId], references: [id], onDelete: Cascade)
+  givePromotionId String?
+  givePromotion   Promotion? @relation("PromotionGive", fields: [givePromotionId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id           String      @id @default(uuid())
+  orderNumber  String      @unique
+  pharmacyId   String
+  pharmacy     Pharmacy    @relation(fields: [pharmacyId], references: [id])
+  street       String
+  ward         String
+  district     String
+  province     String
+  note         String?
+  status       OrderStatus @default(pending)
+  subtotal     Int
+  total        Int
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  confirmedAt  DateTime?
+  shippedAt    DateTime?
+  deliveredAt  DateTime?
+  cancelledAt  DateTime?
+  cancelReason String?
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id          String  @id @default(uuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
+  productName String
+  unit        String
+  quantity    Int
+  unitPrice   Int
+  totalPrice  Int
+  promotionId String?
+}
+
+model CartItem {
+  id         String   @id @default(uuid())
+  pharmacyId String
+  pharmacy   Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  quantity   Int
+  addedPrice Int
+  isFree     Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+
+  @@unique([pharmacyId, productId, isFree])
+}
+
+model Notification {
+  id         String           @id @default(uuid())
+  pharmacyId String
+  pharmacy   Pharmacy         @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  type       NotificationType
+  title      String
+  body       String
+  orderId    String?
+  isRead     Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+}
+
+model ChatRoom {
+  id            String       @id @default(uuid())
+  pharmacyId    String
+  pharmacy      Pharmacy     @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  type          ChatRoomType
+  productId     String?
+  isActive      Boolean      @default(true)
+  lastMessageAt DateTime     @default(now())
+
+  messages ChatMessage[]
+
+  @@unique([pharmacyId, type, productId])
+}
+
+model ChatMessage {
+  id         String         @id @default(uuid())
+  roomId     String
+  room       ChatRoom       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId   String
+  senderType ChatSenderType
+  content    String
+  sentAt     DateTime       @default(now())
+  isRead     Boolean        @default(false)
+}
