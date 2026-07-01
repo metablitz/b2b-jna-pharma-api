@@ -1,3 +1,4 @@
+# Build v2 - commonjs fix
 # ─── Stage 1: Builder ───────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
 
