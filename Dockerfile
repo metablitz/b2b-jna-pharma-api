@@ -4,8 +4,9 @@ WORKDIR /app
 COPY . .
 RUN npm ci
 RUN npx prisma generate
-RUN npx nest build
-RUN ls -la dist/
+RUN npx nest build 2>&1; echo "Exit code: $?"
+RUN ls -la dist/ || echo "dist/ is empty or missing"
+RUN find dist/ -name '*.js' 2>/dev/null | head -20 || echo "no js files found"
 
 # Stage 2: Production
 FROM node:22-alpine AS production
