@@ -1,45 +1,20 @@
-# Build v2 - commonjs fix
-# ─── Stage 1: Builder ───────────────────────────────────────────────────────
+# Stage 1: Build
 FROM node:22-alpine AS builder
-
 WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
-
-# Install ALL dependencies (including devDependencies for build)
-RUN npm ci
-
-# Generate Prisma client
-RUN npx prisma generate
-
-# Copy source code
 COPY . .
-
-# Build NestJS app
-RUN npm run build
-
-# ─── Stage 2: Production ────────────────────────────────────────────────────
-FROM node:22-alpine AS production
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
-
-# Install only production dependencies
-RUN npm ci --omit=dev
-
-# Generate Prisma client in production image
+RUN npm ci
 RUN npx prisma generate
+RUN npx nest build
+RUN ls -la dist/
 
-# Copy built dist from builder stage
+# Stage 2: Production
+FROM node:22-alpine AS production
+WORKDIR /app
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/prisma ./prisma/
+RUN npm ci --omit=dev
+RUN npx prisma generate
 COPY --from=builder /app/dist ./dist
-
-# Expose port
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 EXPOSE 3000
-
-# Start the application
 CMD ["node", "dist/main.js"]
