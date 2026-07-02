@@ -13,6 +13,7 @@ FROM node:22-alpine AS production
 WORKDIR /app
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma/
+COPY --from=builder /app/prisma.config.ts ./
 RUN npm ci --omit=dev
 RUN npx prisma generate
 COPY --from=builder /app/dist ./dist
