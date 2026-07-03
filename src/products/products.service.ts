@@ -27,12 +27,27 @@ export class ProductsService {
   }
 
   async findOne(id: string) {
-    const product = await this.prisma.product.findUnique({
-      where: { id },
-      ...this.productInclude,
-    });
+    const now = new Date();
+    const [product, promotions] = await Promise.all([
+      this.prisma.product.findUnique({
+        where: { id },
+        ...this.productInclude,
+      }),
+      this.prisma.promotion.findMany({
+        where: {
+          isActive: true,
+          startDate: { lte: now },
+          endDate: { gte: now },
+          buyProducts: { some: { productId: id } },
+        },
+        include: {
+          buyProducts: { include: { product: { select: { name: true, unit: true } } } },
+          giveProducts: { include: { product: { select: { name: true, unit: true } } } },
+        },
+      }),
+    ]);
     if (!product) throw new NotFoundException('Không tìm thấy sản phẩm');
-    return product;
+    return { ...product, promotions };
   }
 
   async categories(): Promise<string[]> {

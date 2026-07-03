@@ -85,10 +85,19 @@ export class AdminOrdersService {
     if (order.status === 'delivered' || order.status === 'cancelled') {
       throw new BadRequestException('Không thể hủy đơn hàng ở trạng thái này');
     }
-    return this.prisma.order.update({
-      where: { id },
-      data: { status: 'cancelled', cancelledAt: new Date(), cancelReason: reason },
-      include: { items: true },
-    });
+    const [cancelled] = await this.prisma.$transaction([
+      this.prisma.order.update({
+        where: { id },
+        data: { status: 'cancelled', cancelledAt: new Date(), cancelReason: reason },
+        include: { items: true },
+      }),
+      ...order.items.map((item) =>
+        this.prisma.product.update({
+          where: { id: item.productId },
+          data: { stockQuantity: { increment: item.quantity } },
+        }),
+      ),
+    ]);
+    return cancelled;
   }
 }

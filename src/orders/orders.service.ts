@@ -42,11 +42,7 @@ export class OrdersService {
       throw new BadRequestException(`Sản phẩm đã ngừng bán: ${names}`);
     }
 
-    const outOfStock = cartItems.filter((i) => !i.isFree && i.product.stockQuantity === 0);
-    if (outOfStock.length > 0) {
-      const names = outOfStock.map((i) => i.product.name).join(', ');
-      throw new BadRequestException(`Sản phẩm đã hết hàng: ${names}`);
-    }
+    // stockQuantity=0 items are allowed as pre-orders; admin handles fulfillment separately
 
     const items = cartItems.map((item) => {
       const unitPrice = item.isFree ? 0 : item.addedPrice;
@@ -112,15 +108,23 @@ export class OrdersService {
       );
     }
 
-    const cancelled = await this.prisma.order.update({
-      where: { id },
-      data: {
-        status: 'cancelled',
-        cancelledAt: new Date(),
-        cancelReason: reason ?? 'Nhà thuốc yêu cầu hủy',
-      },
-      include: { items: true },
-    });
+    const [cancelled] = await this.prisma.$transaction([
+      this.prisma.order.update({
+        where: { id },
+        data: {
+          status: 'cancelled',
+          cancelledAt: new Date(),
+          cancelReason: reason ?? 'Nhà thuốc yêu cầu hủy',
+        },
+        include: { items: true },
+      }),
+      ...order.items.map((item) =>
+        this.prisma.product.update({
+          where: { id: item.productId },
+          data: { stockQuantity: { increment: item.quantity } },
+        }),
+      ),
+    ]);
 
     await this.notifications.create(
       pharmacyId,
