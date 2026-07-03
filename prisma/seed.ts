@@ -97,19 +97,21 @@ const PRODUCTS = [
 
 async function main() {
   // ── Admin User ────────────────────────────────────────────────────────────
-  const adminEmail = 'admin@jnapharma.vn';
-  const existing = await prisma.adminUser.findUnique({ where: { email: adminEmail } });
+  const adminEmail = 'hungznguyen7@gmail.com';
+  const adminPasswordHash = await bcrypt.hash('#Billion2030', 10);
+  const existing = await prisma.adminUser.findFirst();
   if (!existing) {
     await prisma.adminUser.create({
-      data: {
-        email: adminEmail,
-        name: 'Admin JNA Pharma',
-        passwordHash: await bcrypt.hash('Admin@2026', 10),
-      },
+      data: { email: adminEmail, name: 'Admin JNA Pharma', passwordHash: adminPasswordHash },
     });
-    console.log('Created admin account: admin@jnapharma.vn / Admin@2026');
+    console.log(`Created admin: ${adminEmail}`);
   } else {
-    console.log('Admin account already exists.');
+    // Update credentials if email or password changed
+    await prisma.adminUser.update({
+      where: { id: existing.id },
+      data: { email: adminEmail, passwordHash: adminPasswordHash },
+    });
+    console.log(`Updated admin: ${adminEmail}`);
   }
 
   // ── Products ──────────────────────────────────────────────────────────────
