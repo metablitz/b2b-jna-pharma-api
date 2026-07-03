@@ -76,7 +76,7 @@ model Pharmacy {
   ward            String
   district        String
   province        String
-  memberTier      MemberTier     @default(bronze)
+  memberTier      MemberTier     @default(gold)
   status          PharmacyStatus @default(pending)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -124,6 +124,8 @@ model Product {
   isLimitedStock     Boolean  @default(false)
   isFeatured         Boolean  @default(false)
   isActive           Boolean  @default(true)
+  minOrderQuantity   Int      @default(1)
+  discontinuedReason String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -132,6 +134,27 @@ model Product {
   cartItems         CartItem[]
   promotionProducts PromotionProduct[]
   favorites         Favorite[]
+}
+
+model CategoryMapping {
+  id          String   @id @default(uuid())
+  rawName     String   @unique
+  displayName String
+  updatedAt   DateTime @updatedAt
+}
+
+model ImportLog {
+  id          String   @id @default(uuid())
+  type        String
+  fileName    String
+  createdAt   DateTime @default(now())
+  totalRows   Int      @default(0)
+  created     Int      @default(0)
+  updated     Int      @default(0)
+  deactivated Int      @default(0)
+  skipped     Int      @default(0)
+  kept        Int      @default(0)
+  errors      Json?
 }
 
 model Favorite {

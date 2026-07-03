@@ -8,6 +8,11 @@ import { PharmacyStatus } from '@prisma/client';
 export class AdminPharmaciesController {
   constructor(private readonly service: AdminPharmaciesService) {}
 
+  @Get('pending-count')
+  pendingCount() {
+    return this.service.pendingCount().then((count) => ({ count }));
+  }
+
   @Get()
   findAll(@Query('status') status?: PharmacyStatus, @Query('search') search?: string) {
     return this.service.findAll(status, search);

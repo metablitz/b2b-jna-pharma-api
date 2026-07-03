@@ -6,6 +6,10 @@ import { PharmacyStatus } from '@prisma/client';
 export class AdminPharmaciesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  pendingCount() {
+    return this.prisma.pharmacy.count({ where: { status: 'pending' } });
+  }
+
   findAll(status?: PharmacyStatus, search?: string) {
     return this.prisma.pharmacy.findMany({
       where: {

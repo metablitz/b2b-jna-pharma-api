@@ -14,10 +14,11 @@ import { CartService } from './cart.service';
 import { AddCartItemDto } from './dto/add-cart-item.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ActivePharmacyGuard } from '../auth/guards/active-pharmacy.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from '../auth/types/jwt-payload.interface';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, ActivePharmacyGuard)
 @Controller('cart')
 export class CartController {
   constructor(private readonly cartService: CartService) {}

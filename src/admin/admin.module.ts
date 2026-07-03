@@ -4,6 +4,8 @@ import { PassportModule } from '@nestjs/passport';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ChatModule } from '../chat/chat.module';
 import { AdminChatController } from './admin-chat/admin-chat.controller';
+import { AdminImportController } from './admin-import/admin-import.controller';
+import { AdminImportService } from './admin-import/admin-import.service';
 
 import { AdminAuthController } from './admin-auth/admin-auth.controller';
 import { AdminAuthService } from './admin-auth/admin-auth.service';
@@ -29,6 +31,7 @@ import { AdminPharmaciesService } from './admin-pharmacies/admin-pharmacies.serv
     AdminPromotionsController,
     AdminPharmaciesController,
     AdminChatController,
+    AdminImportController,
   ],
   providers: [
     AdminAuthService,
@@ -37,6 +40,7 @@ import { AdminPharmaciesService } from './admin-pharmacies/admin-pharmacies.serv
     AdminOrdersService,
     AdminPromotionsService,
     AdminPharmaciesService,
+    AdminImportService,
   ],
 })
 export class AdminModule {}

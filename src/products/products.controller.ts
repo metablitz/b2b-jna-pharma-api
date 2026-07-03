@@ -1,14 +1,14 @@
 import { Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ActivePharmacyGuard } from '../auth/guards/active-pharmacy.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from '../auth/types/jwt-payload.interface';
 
+@UseGuards(JwtAuthGuard, ActivePharmacyGuard)
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
-
-  // ── Public routes (order matters: specific before :id) ────────────────────
 
   @Get('categories')
   categories() {
@@ -20,19 +20,16 @@ export class ProductsController {
     return this.productsService.findFeatured();
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('favorites')
   findFavorites(@CurrentUser() user: JwtPayload) {
     return this.productsService.findFavorites(user.sub);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('favorite-ids')
   getFavoriteIds(@CurrentUser() user: JwtPayload) {
     return this.productsService.getFavoriteIds(user.sub);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('recent')
   findRecentlyOrdered(@CurrentUser() user: JwtPayload) {
     return this.productsService.findRecentlyOrdered(user.sub);
@@ -48,9 +45,6 @@ export class ProductsController {
     return this.productsService.findOne(id);
   }
 
-  // ── Authenticated favorite toggle ─────────────────────────────────────────
-
-  @UseGuards(JwtAuthGuard)
   @Post(':id/favorite')
   toggleFavorite(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.productsService.toggleFavorite(user.sub, id);
