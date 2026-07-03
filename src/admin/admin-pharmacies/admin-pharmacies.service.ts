@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PharmacyStatus } from '@prisma/client';
 
@@ -59,5 +60,14 @@ export class AdminPharmaciesService {
       data: { status },
       select: { id: true, code: true, name: true, status: true },
     });
+  }
+
+  async resetPassword(id: string) {
+    await this.findOne(id);
+    // Generate temp password: JNA- + 6 random digits
+    const plain = `JNA-${Math.floor(100000 + Math.random() * 900000)}`;
+    const passwordHash = await bcrypt.hash(plain, 10);
+    await this.prisma.pharmacy.update({ where: { id }, data: { passwordHash } });
+    return { tempPassword: plain };
   }
 }

@@ -36,6 +36,18 @@ export class OrdersService {
       throw new BadRequestException('Giỏ hàng đang trống');
     }
 
+    const discontinued = cartItems.filter((i) => !i.isFree && !i.product.isActive);
+    if (discontinued.length > 0) {
+      const names = discontinued.map((i) => i.product.name).join(', ');
+      throw new BadRequestException(`Sản phẩm đã ngừng bán: ${names}`);
+    }
+
+    const outOfStock = cartItems.filter((i) => !i.isFree && i.product.stockQuantity === 0);
+    if (outOfStock.length > 0) {
+      const names = outOfStock.map((i) => i.product.name).join(', ');
+      throw new BadRequestException(`Sản phẩm đã hết hàng: ${names}`);
+    }
+
     const items = cartItems.map((item) => {
       const unitPrice = item.isFree ? 0 : item.addedPrice;
       return {

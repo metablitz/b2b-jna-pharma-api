@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { AdminPharmaciesService } from './admin-pharmacies.service';
 import { AdminJwtGuard } from '../admin-auth/admin-jwt.guard';
 import { PharmacyStatus } from '@prisma/client';
@@ -26,5 +26,10 @@ export class AdminPharmaciesController {
   @Put(':id/status')
   updateStatus(@Param('id') id: string, @Body() body: { status: PharmacyStatus }) {
     return this.service.updateStatus(id, body.status);
+  }
+
+  @Post(':id/reset-password')
+  resetPassword(@Param('id') id: string) {
+    return this.service.resetPassword(id);
   }
 }
