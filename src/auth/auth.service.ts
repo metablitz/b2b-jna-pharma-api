@@ -48,13 +48,15 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async register(dto: RegisterPharmacyDto) {
-    const existing = await this.prisma.pharmacy.findUnique({
-      where: { phone: dto.phone },
-    });
-    if (existing) {
-      throw new ConflictException('Số điện thoại đã được đăng ký');
-    }
+  async register(
+    dto: RegisterPharmacyDto,
+    files?: {
+      businessLicenseFile?: Express.Multer.File;
+      pharmacyLicenseFile?: Express.Multer.File;
+    },
+  ) {
+    const existing = await this.prisma.pharmacy.findUnique({ where: { phone: dto.phone } });
+    if (existing) throw new ConflictException('Số điện thoại đã được đăng ký');
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const code = await this.generatePharmacyCode();
@@ -63,13 +65,18 @@ export class AuthService {
       data: {
         code,
         name: dto.name,
-        businessLicense: dto.businessLicense,
+        ownerName: dto.ownerName,
         street: dto.street,
-        ward: dto.ward,
-        district: dto.district,
-        province: dto.province,
+        province: dto.province ?? '',
+        ward: '',
+        district: '',
         phone: dto.phone,
         passwordHash,
+        licenseSubmitMethod: dto.licenseSubmitMethod ?? null,
+        businessLicenseFile: files?.businessLicenseFile?.buffer ?? null,
+        businessLicenseName: files?.businessLicenseFile?.originalname ?? null,
+        pharmacyLicenseFile: files?.pharmacyLicenseFile?.buffer ?? null,
+        pharmacyLicenseName: files?.pharmacyLicenseFile?.originalname ?? null,
       },
     });
 

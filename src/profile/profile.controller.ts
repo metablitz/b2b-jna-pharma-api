@@ -56,4 +56,9 @@ export class ProfileController {
   setDefault(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.profileService.setDefault(user.sub, id);
   }
+
+  @Get('credit')
+  getCredit(@CurrentUser() user: JwtPayload) {
+    return this.profileService.getCredit(user.sub);
+  }
 }

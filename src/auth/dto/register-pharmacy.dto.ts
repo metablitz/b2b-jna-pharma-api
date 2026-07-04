@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, Matches, MinLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, Matches, MinLength } from 'class-validator';
 
 export class RegisterPharmacyDto {
   @IsString()
@@ -6,31 +6,27 @@ export class RegisterPharmacyDto {
   name: string;
 
   @IsString()
-  @IsNotEmpty()
-  businessLicense: string;
+  @IsOptional()
+  ownerName?: string;
 
   @IsString()
   @IsNotEmpty()
-  street: string;
+  street: string; // single-line address
 
   @IsString()
-  @IsNotEmpty()
-  ward: string;
+  @IsOptional()
+  province?: string;
 
-  @IsString()
-  @IsNotEmpty()
-  district: string;
-
-  @IsString()
-  @IsNotEmpty()
-  province: string;
-
-  @Matches(/^(0|\+84)[0-9]{9,10}$/, {
-    message: 'phone must be a valid Vietnamese phone number',
+  @Matches(/^(0|\+84)[0-9]{8,10}$/, {
+    message: 'Số điện thoại không hợp lệ',
   })
   phone: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(6, { message: 'Mật khẩu phải có ít nhất 6 ký tự' })
   password: string;
+
+  @IsString()
+  @IsOptional()
+  licenseSubmitMethod?: string; // "uploaded" | "via_zalo"
 }

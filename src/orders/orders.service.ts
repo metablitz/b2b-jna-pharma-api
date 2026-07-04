@@ -56,6 +56,20 @@ export class OrdersService {
       };
     });
     const total = items.reduce((sum, item) => sum + item.totalPrice, 0);
+
+    // Credit check: outstanding active orders + this order must not exceed limit
+    const outstandingAgg = await this.prisma.order.aggregate({
+      where: { pharmacyId, status: { in: ['pending', 'confirmed', 'shipping'] } },
+      _sum: { total: true },
+    });
+    const outstanding = outstandingAgg._sum.total ?? 0;
+    if (outstanding + total > pharmacy.creditLimit) {
+      const available = Math.max(0, pharmacy.creditLimit - outstanding);
+      throw new BadRequestException(
+        `Đơn hàng vượt hạn mức công nợ. Hạn mức còn lại: ${available.toLocaleString('vi-VN')}đ, đơn hàng: ${total.toLocaleString('vi-VN')}đ`,
+      );
+    }
+
     const orderNumber = await this.generateOrderNumber();
 
     const [order] = await this.prisma.$transaction([

@@ -26,9 +26,11 @@ export class AdminPharmaciesService {
           : {}),
       },
       select: {
-        id: true, code: true, name: true, phone: true, email: true,
-        businessLicense: true, street: true, ward: true, district: true,
-        province: true, memberTier: true, status: true, createdAt: true,
+        id: true, code: true, name: true, ownerName: true, phone: true, email: true,
+        street: true, province: true, memberTier: true, status: true,
+        creditLimit: true, licenseSubmitMethod: true,
+        businessLicenseName: true, pharmacyLicenseName: true,
+        createdAt: true,
         _count: { select: { orders: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -39,9 +41,11 @@ export class AdminPharmaciesService {
     const pharmacy = await this.prisma.pharmacy.findUnique({
       where: { id },
       select: {
-        id: true, code: true, name: true, phone: true, email: true,
-        businessLicense: true, street: true, ward: true, district: true,
-        province: true, memberTier: true, status: true, createdAt: true,
+        id: true, code: true, name: true, ownerName: true, phone: true, email: true,
+        street: true, province: true, memberTier: true, status: true,
+        creditLimit: true, licenseSubmitMethod: true,
+        businessLicenseName: true, pharmacyLicenseName: true,
+        createdAt: true,
         orders: {
           orderBy: { createdAt: 'desc' },
           take: 5,
@@ -51,6 +55,38 @@ export class AdminPharmaciesService {
     });
     if (!pharmacy) throw new NotFoundException('Không tìm thấy nhà thuốc');
     return pharmacy;
+  }
+
+  async setCreditLimit(id: string, creditLimit: number) {
+    await this.prisma.pharmacy.findUniqueOrThrow({ where: { id } });
+    return this.prisma.pharmacy.update({
+      where: { id },
+      data: { creditLimit },
+      select: { id: true, code: true, name: true, creditLimit: true },
+    });
+  }
+
+  async getDocument(id: string, docType: 'business' | 'pharmacy') {
+    const pharmacy = await this.prisma.pharmacy.findUnique({
+      where: { id },
+      select:
+        docType === 'business'
+          ? { businessLicenseFile: true, businessLicenseName: true }
+          : { pharmacyLicenseFile: true, pharmacyLicenseName: true },
+    });
+    if (!pharmacy) throw new NotFoundException('Không tìm thấy nhà thuốc');
+
+    const file =
+      docType === 'business'
+        ? (pharmacy as { businessLicenseFile: Buffer | null; businessLicenseName: string | null }).businessLicenseFile
+        : (pharmacy as { pharmacyLicenseFile: Buffer | null; pharmacyLicenseName: string | null }).pharmacyLicenseFile;
+    const name =
+      docType === 'business'
+        ? (pharmacy as { businessLicenseName: string | null }).businessLicenseName
+        : (pharmacy as { pharmacyLicenseName: string | null }).pharmacyLicenseName;
+
+    if (!file) throw new NotFoundException('Chưa có tài liệu');
+    return { file, name: name ?? `${docType}-license` };
   }
 
   async updateStatus(id: string, status: PharmacyStatus) {

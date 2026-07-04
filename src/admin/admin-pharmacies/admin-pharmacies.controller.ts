@@ -1,4 +1,7 @@
-import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import {
+  Body, Controller, Get, Param, Post, Put, Query, Res, UseGuards,
+} from '@nestjs/common';
+import type { Response } from 'express';
 import { AdminPharmaciesService } from './admin-pharmacies.service';
 import { AdminJwtGuard } from '../admin-auth/admin-jwt.guard';
 import { PharmacyStatus } from '@prisma/client';
@@ -31,5 +34,26 @@ export class AdminPharmaciesController {
   @Post(':id/reset-password')
   resetPassword(@Param('id') id: string) {
     return this.service.resetPassword(id);
+  }
+
+  @Put(':id/credit-limit')
+  setCreditLimit(@Param('id') id: string, @Body() body: { creditLimit: number }) {
+    return this.service.setCreditLimit(id, body.creditLimit);
+  }
+
+  @Get(':id/documents/:docType')
+  async downloadDocument(
+    @Param('id') id: string,
+    @Param('docType') docType: string,
+    @Res() res: Response,
+  ) {
+    const type = docType === 'business' ? 'business' : 'pharmacy';
+    const { file, name } = await this.service.getDocument(id, type);
+    const ext = name.split('.').pop() ?? 'bin';
+    res.set({
+      'Content-Disposition': `attachment; filename="${name}"`,
+      'Content-Type': ext === 'pdf' ? 'application/pdf' : 'application/octet-stream',
+    });
+    res.send(file);
   }
 }

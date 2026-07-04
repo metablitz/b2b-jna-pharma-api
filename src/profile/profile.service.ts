@@ -109,6 +109,28 @@ export class ProfileService {
     return this.listAddresses(pharmacyId);
   }
 
+  async getCredit(pharmacyId: string) {
+    const pharmacy = await this.prisma.pharmacy.findUniqueOrThrow({
+      where: { id: pharmacyId },
+      select: { creditLimit: true },
+    });
+
+    const outstanding = await this.prisma.order.aggregate({
+      where: {
+        pharmacyId,
+        status: { in: ['pending', 'confirmed', 'shipping'] },
+      },
+      _sum: { total: true },
+    });
+
+    const used = outstanding._sum.total ?? 0;
+    return {
+      creditLimit: pharmacy.creditLimit,
+      outstanding: used,
+      available: Math.max(0, pharmacy.creditLimit - used),
+    };
+  }
+
   private async guardOwnership(pharmacyId: string, id: string) {
     const addr = await this.prisma.address.findFirst({ where: { id, pharmacyId } });
     if (!addr) throw new NotFoundException('Không tìm thấy địa chỉ');
